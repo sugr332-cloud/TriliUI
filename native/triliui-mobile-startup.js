@@ -16,11 +16,33 @@
     const TOGGLE_ID = "triliui-fixed-tree-toggle";
     const REQUIRED_IDS = ["mobile-rest-container", "mobile-sidebar-wrapper", "detail-container", "launcher-pane"];
 
-    // Do not change the desktop UI, and support emergency recovery:
-    // add ?triliuiOff=1 to the Trilium URL (on an already authenticated session).
-    if (!document.body || !document.body.classList.contains("mobile")) return;
-    if (new URLSearchParams(window.location.search).get("triliuiOff") === "1") return;
-    if (window.__triliuiFixedTreeInitialized) return;
+    // Safe mode and diagnostics are local-only URL switches; no network requests.
+    const query = new URLSearchParams(window.location.search);
+    if (query.get("triliuiOff") === "1") return;
+    if (window.__triliuiFixedTreeInitialized || window.__triliuiBootstrapping) return;
+    const DEBUG = query.get("triliuiDebug") === "1";
+    const DIAG_ID = "triliui-diagnostic-banner";
+    const VERSION = "0.1.1";
+    window.__triliuiBootstrapping = true;
+
+    function report(state, missingIds = []) {
+        const data = { version: VERSION, state, missingIds, mobile: !!document.body?.classList.contains("mobile") };
+        window.__triliuiDiagnostics = data;
+        if (!DEBUG || !document.body) return;
+        let banner = document.getElementById(DIAG_ID);
+        if (!banner) {
+            banner = document.createElement("div");
+            banner.id = DIAG_ID;
+            banner.setAttribute("role", "status");
+            banner.style.cssText = "position:fixed;top:8px;right:8px;z-index:2147483640;max-width:80vw;pointer-events:none;font:12px/1.4 system-ui;color:#fff;background:#25394e;border:1px solid #a5b3c4;border-radius:7px;padding:8px;white-space:normal;";
+            document.body.appendChild(banner);
+        }
+        const message = "TriliUI " + VERSION + " | " + state + (missingIds.length ? " | missing: " + missingIds.join(", ") : "");
+        if (banner.textContent !== message) banner.textContent = message;
+    }
+
+    // A mobileStartup script may execute while Trilium is still assembling
+    // its body classes and navigation widgets. Wait rather than exiting early.
 
     const css = `
 /* TriliUI Phase 1. Scoped to mobile, active state and phone width only. */
@@ -136,9 +158,24 @@ body.mobile.${ACTIVE_CLASS} #mobile-rest-container {
     }
 
     function install() {
+        if (!document.body) {
+            report("waiting-for-body");
+            return false;
+        }
+        if (document.body.classList.contains("desktop")) {
+            report("desktop-skipped");
+            return false;
+        }
+        if (!document.body.classList.contains("mobile")) {
+            report("waiting-for-mobile-class");
+            return false;
+        }
         // Fail closed if this release's internal mobile DOM changed.
-        const els = REQUIRED_IDS.map((id) => document.getElementById(id));
-        if (els.some((node) => !node)) return false;
+        const missing = REQUIRED_IDS.filter((id) => !document.getElementById(id));
+        if (missing.length) {
+            report("waiting-for-layout", missing);
+            return false;
+        }
 
         if (!document.getElementById(STYLE_ID)) {
             const style = document.createElement("style");
@@ -169,20 +206,43 @@ body.mobile.${ACTIVE_CLASS} #mobile-rest-container {
         launcher.prepend(toggle);
         update();
         window.__triliuiFixedTreeInitialized = true;
+        report("ready");
         return true;
     }
 
-    if (install()) return;
+    if (install()) {
+        window.__triliuiBootstrapping = false;
+        return;
+    }
 
-    // Startup scripts can run before the mobile layout has mounted.
+    // Observe both inserted layout elements and a delayed body.mobile class.
     const observer = new MutationObserver(() => {
-        if (install()) observer.disconnect();
+        if (window.__triliuiFixedTreeInitialized) {
+            observer.disconnect();
+            return;
+        }
+        if (install()) {
+            observer.disconnect();
+            window.__triliuiBootstrapping = false;
+        }
     });
-    observer.observe(document.documentElement, { childList: true, subtree: true });
+    observer.observe(document.documentElement, {
+        childList: true,
+        subtree: true,
+        attributes: true,
+        attributeFilter: ["class"]
+    });
     window.setTimeout(() => {
         observer.disconnect();
         if (!window.__triliuiFixedTreeInitialized) {
-            console.warn("[TriliUI] The mobile layout selectors did not match. No changes were applied.");
+            if (document.body?.classList.contains("desktop")) {
+                report("desktop-skipped");
+            } else {
+                const missing = REQUIRED_IDS.filter((id) => !document.getElementById(id));
+                report("timed-out", missing);
+                console.warn("[TriliUI] Startup timed out. Open Trilium with ?triliuiDebug=1 to inspect the layout.");
+            }
         }
-    }, 10000);
+        window.__triliuiBootstrapping = false;
+    }, 15000);
 })();
