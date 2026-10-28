@@ -10,6 +10,7 @@ function fakeEnvironment({ mobile = true, layout = true, search = "" } = {}) {
     const elements = new Map();
     const classSet = new Set(mobile ? ["mobile"] : ["desktop"]);
     const body = {
+        appendChild(node) { elements.set(node.id, node); },
         classList: {
             contains: (value) => classSet.has(value),
             toggle(value, enabled) { if (enabled) classSet.add(value); else classSet.delete(value); }
@@ -18,7 +19,7 @@ function fakeEnvironment({ mobile = true, layout = true, search = "" } = {}) {
     const nodes = [];
     function createElement(tag) {
         const node = {
-            tag, id: "", type: "", textContent: "", attributes: {},
+            tag, id: "", type: "", textContent: "", attributes: {}, style: {},
             setAttribute(k, v) { this.attributes[k] = v; },
             addEventListener(k, fn) { this.events[k] = fn; },
             events: {},
@@ -115,4 +116,35 @@ test("missing DOM remains untouched until original layout appears", () => {
     assert.equal(env.elements.has("triliui-fixed-tree-style"), false);
     assert.equal(env.getObserver().observing, true);
     assert.equal(env.window.__triliuiFixedTreeInitialized, undefined);
+});
+
+test("mobile body class arriving late installs from observer", () => {
+    const env = fakeEnvironment({ mobile: false });
+    env.run();
+    assert.equal(env.elements.has("triliui-fixed-tree-style"), false);
+    assert.equal(env.window.__triliuiDiagnostics.state, "desktop-skipped");
+    env.classSet.delete("desktop");
+    env.classSet.add("mobile");
+    env.getObserver().callback();
+    assert.equal(env.window.__triliuiFixedTreeInitialized, true);
+    assert.equal(env.classSet.has("triliui-fixed-tree"), true);
+    assert.equal(env.window.__triliuiDiagnostics.state, "ready");
+    assert.equal(env.getObserver().disconnected, true);
+});
+
+test("debug mode shows readiness status without remote logging", () => {
+    const env = fakeEnvironment({ search: "?triliuiDebug=1" });
+    env.run();
+    const banner = env.elements.get("triliui-diagnostic-banner");
+    assert.ok(banner);
+    assert.match(banner.textContent, /ready/);
+    assert.equal(env.window.__triliuiDiagnostics.mobile, true);
+    assert.equal(env.window.__triliuiDiagnostics.version, "0.1.1");
+});
+
+test("debug mode lists missing layout selectors", () => {
+    const env = fakeEnvironment({ layout: false, search: "?triliuiDebug=1" });
+    env.run();
+    assert.match(env.elements.get("triliui-diagnostic-banner").textContent, /waiting-for-layout/);
+    assert.match(env.elements.get("triliui-diagnostic-banner").textContent, /mobile-rest-container/);
 });
