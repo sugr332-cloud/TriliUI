@@ -75,8 +75,7 @@ body.mobile.${ACTIVE_CLASS} #mobile-rest-container {
     }
     body.mobile.${ACTIVE_CLASS} #mobile-sidebar-wrapper .mobile-navigator-current-preview,
     body.mobile.${ACTIVE_CLASS} #mobile-sidebar-wrapper .mobile-navigator-row-count,
-    body.mobile.${ACTIVE_CLASS} #mobile-sidebar-wrapper .mobile-navigator-row-hidden-badge,
-    body.mobile.${ACTIVE_CLASS} #mobile-sidebar-wrapper .mobile-navigator-workspaces {
+    body.mobile.${ACTIVE_CLASS} #mobile-sidebar-wrapper .mobile-navigator-row-hidden-badge {
         display: none !important;
     }
     body.mobile.${ACTIVE_CLASS} #mobile-sidebar-wrapper .mobile-navigator-row {
