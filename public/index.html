@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#131c2a">
+  <title>TriliUI — Trilium mobile web companion</title>
+  <link rel="stylesheet" href="/style.css">
+  <script src="/app.js" defer></script>
+</head>
+<body>
+  <div class="layout">
+    <aside class="sidebar" aria-label="ノートツリー">
+      <div class="brand">
+        <strong>TriliUI</strong>
+        <button id="width-toggle" type="button" title="ツリーの幅を切り替え" aria-label="ツリーの幅を切り替え">☰</button>
+      </div>
+      <div class="side-help">Trilium のノートツリー</div>
+      <nav id="tree" aria-label="Trilium のノートツリー"></nav>
+      <p class="sidebar-caption">PC / Android ブラウザ対応</p>
+    </aside>
+    <main class="main">
+      <header class="toolbar">
+        <span id="current-title">ノートを選択してください</span>
+        <span id="connection" role="status">確認中…</span>
+      </header>
+      <section id="stage" class="stage" aria-live="polite">
+        <div class="intro">
+          <h1>TriliUI</h1>
+          <p>左側のノートツリーは表示したまま、右側の表示を切り替えます。</p>
+          <p>GitHub / ChatGPT は外部ページへの埋め込みを拒否します。実画面を同じ領域で操作するには、別途リモートブラウザ接続が必要です。</p>
+        </div>
+      </section>
+    </main>
+  </div>
+</body>
+</html>
