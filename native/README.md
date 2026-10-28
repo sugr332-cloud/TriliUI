@@ -13,12 +13,16 @@ Trilium のブラウザ版を Android で開いたとき、通常はノートツ
 1. **Trilium のバックアップを作成**し、既存のノート・編集機能を触らないことを確認。
 2. Trilium 内に通常の子ノートを作成。ノート名を `TriliUI Mobile Startup` にする。
 3. ノート種類を **Code** にし、言語を **JS (frontend)** にする。**JS (backend) は選ばない**。
-4. このリポジトリの [triliui-mobile-startup.js](triliui-mobile-startup.js) の全内容を Code ノートに貼り付ける。
+4. このリポジトリの [最新版 triliui-mobile-startup.js](triliui-mobile-startup.js) の全内容を Code ノートに貼り付ける。**以前のコードを登録済みなら全内容を置換**する。
 5. ノートの「属性 (Attributes)」から **ラベル `run` / 値 `mobileStartup`** を追加する（表示上は `#run=mobileStartup`）。
 6. Android Chrome で Trilium を開き直す。スマホ版にならない場合は Trilium のグローバルメニューからモバイル版に切り替え（またはログイン時 `?mobile`）。
 7. 画面下のランチャー列に現れる **☷** ボタンで左ナビゲーションの固定を ON / OFF にする。初期値は ON。
 
 **重要：スクリプトが追加されただけでは、GitHub / ChatGPT のページは埋め込まれません。** 本フェーズはノートツリー／通常の本文編集の並置のみを対象にしています。
+
+## 実機診断（まずここから）
+
+[**Androidでバナーが出ない場合も含めた診断手順**](TROUBLESHOOTING.md)を追加しました。TriliumのURLに `?triliuiDebug=1`（クエリが既にあれば `&triliuiDebug=1`）を付け、ページを再読み込みしてください。画面右上のバナーが `TriliUI 0.1.1 | ready` なら初期化に成功しています。`waiting-for-mobile-class` や `waiting-for-layout` が出れば、条件が揃うまで最大15秒監視します。**バナーが全く出なければスクリプト未実行・属性未設定・古いコードなどを先に確認**してください。
 
 ## 画面の挙動
 
