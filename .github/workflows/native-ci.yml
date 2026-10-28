@@ -1,0 +1,29 @@
+name: Native Trilium mobile checks
+
+on:
+  push:
+    paths:
+      - "native/**"
+      - "test/native-mobile-startup.test.mjs"
+      - ".github/workflows/native-ci.yml"
+  pull_request:
+    paths:
+      - "native/**"
+      - "test/native-mobile-startup.test.mjs"
+      - ".github/workflows/native-ci.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Check syntax
+        run: node --check native/triliui-mobile-startup.js
+      - name: Test safe mode and layout toggle
+        run: node --test test/native-mobile-startup.test.mjs
