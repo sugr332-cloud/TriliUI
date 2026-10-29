@@ -1,4 +1,5 @@
 import { createServer } from "node:http";
+import { createGithubBrowser } from "./github-browser.mjs";
 import { readFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
@@ -9,10 +10,12 @@ const BIND = process.env.TRILIUI_BIND || "127.0.0.1";
 const ETAPI_BASE = (process.env.TRILIUM_BASE_URL || "http://127.0.0.1:8080").replace(/\/$/, "");
 const ETAPI_TOKEN = process.env.TRILIUM_ETAPI_TOKEN || "";
 const ROOT_ID = process.env.TRILIUI_ROOT_NOTE_ID || "root";
+const githubBrowser = createGithubBrowser();
 const NOTE_ID = /^(?:root|[a-zA-Z0-9_]{4,32})$/;
 const STATIC = new Map([
   ["/", ["index.html", "text/html; charset=utf-8"]],
   ["/app.js", ["app.js", "text/javascript; charset=utf-8"]],
+  ["/github-viewer.js", ["github-viewer.js", "text/javascript; charset=utf-8"]],
   ["/style.css", ["style.css", "text/css; charset=utf-8"]],
 ]);
 
@@ -70,6 +73,26 @@ async function fromTrilium(endpoint) {
 
 export function makeHandler() {
   return async (req, res) => {
+    if (req.url === "/api/github/browser" && req.method === "POST") {
+      const origin = req.headers.origin;
+      const host = req.headers.host;
+      if (!origin || new URL(origin).host !== host ||
+          !req.headers["content-type"]?.startsWith("application/json")) {
+        return reply(res, 403, { error: "Origin and JSON required" });
+      }
+      let input = "";
+      for await (const chunk of req) {
+        input += chunk.toString();
+        if (input.length > 8192) return reply(res, 413, { error: "Request too large" });
+      }
+      try {
+        const data = JSON.parse(input);
+        const out = await githubBrowser.perform(data.action, data);
+        return reply(res, 200, out);
+      } catch (e) {
+        return reply(res, e.status || 502, { error: e.message });
+      }
+    }
     if (req.method !== "GET") return reply(res, 405, { error: "GET only" });
     let path;
     try {
