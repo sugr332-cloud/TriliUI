@@ -15,6 +15,7 @@ const NOTE_ID = /^(?:root|[a-zA-Z0-9_]{4,32})$/;
 const STATIC = new Map([
   ["/", ["index.html", "text/html; charset=utf-8"]],
   ["/app.js", ["app.js", "text/javascript; charset=utf-8"]],
+  ["/github-viewer.js", ["github-viewer.js", "text/javascript; charset=utf-8"]],
   ["/style.css", ["style.css", "text/css; charset=utf-8"]],
 ]);
 
